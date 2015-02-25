@@ -19,7 +19,7 @@ using namespace std;
 
 const int N = 40;
 const int MID = N / 2; //N / 2;
-const int DEPTH = 6;
+const int DEPTH = 4;
 const int DELTA = 10;
 
 const char chr[] = { '.', 'O', 'X' };
@@ -71,8 +71,8 @@ void count_features(vector<int> & pos, int who) {
     pii tp[] = { mp(1, 0), mp(0, 1), mp(1, 1), mp(1, -1) };
     int best = 0;
     
-    forn(i, ub + 1, db - 1) {
-        forn(j, lb + 1, rb - 1) {
+    forn(i, ub, db) {
+        forn(j, lb, rb) {
             for (pii p : tp) {
                 int u = p.first, v = p.second;
                 int inc1 = 0, inc2 = 0;
@@ -188,7 +188,7 @@ int minimax(int depth, int who, int alpha, int beta) {
                 L = tmp1, R = tmp2;
                 a[i][j] = -1;
                 
-                if (alpha >= beta) {
+                if (alpha >= beta || alpha > 90) {
                     break;
                 }
             }
@@ -295,7 +295,7 @@ void RunGame() {
 
         }
 
-        usleep(100000);
+        usleep(1000);
         /*
         forn(y, L.first, R.first) {
             forn(x, L.second, R.second) {
@@ -306,6 +306,7 @@ void RunGame() {
         */
 
     }
+    usleep(1000000);
     ofstream off("ai");
     off << -2 << " " << winner;
     off.close();

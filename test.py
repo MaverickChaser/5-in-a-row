@@ -2,7 +2,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QAbstractButton, QPushButton, QApplication, \
-                                QWidget, QGridLayout, QMessageBox
+                                QWidget, QGridLayout, QMessageBox, QSizePolicy
 
 import sys
 import os
@@ -35,15 +35,17 @@ class Button(QPushButton):
     def __init__(self, i, j, text="", parent=None):
         super(Button, self).__init__(parent)
         self.clicked.connect(lambda f : self.onclick("O"))
-        #self.setSizePolicy ( QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy ( QSizePolicy.Expanding, QSizePolicy.Expanding)
         #self.resize(1, 1)
         self.setText(text)
         self.i, self.j = i, j
 
 
     def onclick(self, pl):
-        print "---> ", self.i, self.j 
-        global player, L, R
+        if self.text() != "":
+            print "SHIT"
+            return
+        global player, L, R, last_move, O
         if pl == "O" and player == "X":
             msgBox = QMessageBox()
             msgBox.setText("AI's turn, bitch!")
@@ -52,27 +54,34 @@ class Button(QPushButton):
         self.setStyleSheet("background-color: #2f4f4f; color:red")
         self.setText(player)
         if player == "O":
+            player = "X"
             
-            player = "X" 
-            i,j=self.i-L[0], self.j-L[1]
-            applyMove(i, j)
-            writefile(i, j)
-            print i, j
+            last_move = self.i, self.j
+            i, j = self.i-L[0], self.j-L[1]
+            apply_move(i, j)
+            write_file(i, j)
+            O += 1
         else:
             player = "O"
 
-    def sizeHint(self):
-        return QSize(20, 20)
+    #def sizeHint(self):
+     #   return QSize(20, 20)
 
 player = "X"
 ai_turn = 1
+last_move = (-2, -2)
+N = 40
+L, R = [N//2, N//2], [N//2, N//2]
+btns = [[0] * N for i in range(N)]
+X = 1
+O = 1
 
-def writefile(i, j):
+def write_file(i, j):
     human = open("human", "w")
-    human.write(str(i) + " " + str(j))
+    human.write(str(O) + " " + str(i) + " " + str(j))
     human.close()
 
-def applyMove(i, j):
+def apply_move(i, j):
     global L, R
     h, w = R[0] - L[0], R[1] - L[1]
     if (i == 0):
@@ -87,54 +96,54 @@ def applyMove(i, j):
     if (j == w):
         R[1]+=1;
 
-
-N = 40
-L, R = [N//2, N//2], [N//2, N//2]
+def show_last_move():
+    print last_move
+    btns[last_move[0]][last_move[1]].setStyleSheet("background-color: #2f4f4f; color:green")
+    #QApplication.processEvents()
+    #for i in range(10000): pass
+    #btns[last_move[0]][last_move[1]].setStyleSheet("background-color: #2f4f4f; color:red")
 
 def run():
+    global last_move, X
     app = QApplication(sys.argv)
     window = QWidget()
+    #window.SetSizeConstraint(QtGui.QLayout.SetFixedSize)  # no resize arrows
     g = QGridLayout(window)
 
-
-    g.setSpacing(10)
-    btns = [[0] * N for i in range(N)]
-
+    #g.setSpacing(0)
     for i in range(N):
         for j in range(N):
             b = Button(i, j)
+            b.setFixedSize(20, 20)
+
             btns[i][j] = b
             g.addWidget(b, i, j, 1, 1)
+    button = QPushButton("Last move")
+    button.clicked.connect(show_last_move)
+    g.addWidget(button, N, 0, 1, N, Qt.AlignCenter)
     window.show()
     
     
-    os.system("echo -2 -2 > ai && echo -1 -1 > human")
+    os.system("echo -2 -2 -2 > ai && echo -1 -1 -1 > human")
+    
+    
+    msgBox = QMessageBox();
+    winner = -1
     
     proc = subprocess.Popen(["./tictac"])
     atexit.register(proc.kill)
     atexit.register(sys.exit)
     
-    #os.system("./tictac")
-
-    msgBox = QMessageBox();
-
-    last = (-2, -2)
-    winner = -1
-
-    
     while winner == -1:
         QApplication.processEvents()
-        time.sleep(0.1)
-        ai = open("ai", "r+")
+        time.sleep(0.001)
+        ai = open("ai", "r")
 
         s = ai.readline()
-        if s=="":
-            
+        if s == "":
             continue
-        i, j = list(map(int, s.split()))
-
-        ai.seek(0)
-        ai.write('')
+            
+        num, i, j = list(map(int, s.split()))
 
         if i == -2:
             if j == -2:
@@ -143,18 +152,17 @@ def run():
             else:
                 winner = j
                 print ''
-        else:
+        elif num == X:
+            X += 1
+            last_move = L[0] + i, L[1] + j
             btns[L[0] + i][L[1] + j].onclick("X")
-            applyMove(i, j)
-            print "-- ", i, j
-            print "new ", L
+            apply_move(i, j)
 
-        ai.truncate()
-        #sai.close()
+        ai.close()
         #human.close() 
         #time.sleep(0.1)
     
-        
+
     msgBox.setText("Player {0} wins".format(str(winner)))
     msgBox.exec_()
     sys.exit(app.exec_())

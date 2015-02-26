@@ -19,7 +19,7 @@ using namespace std;
 
 const int N = 40;
 const int MID = N / 2; //N / 2;
-const int DEPTH = 4;
+const int DEPTH = 2;
 const int DELTA = 10;
 
 const char chr[] = { '.', 'O', 'X' };
@@ -189,6 +189,7 @@ int minimax(int depth, int who, int alpha, int beta) {
                 a[i][j] = -1;
                 
                 if (alpha >= beta || alpha > 90) {
+                    //printf("%s\n", "SUCCESS");
                     break;
                 }
             }
@@ -218,7 +219,7 @@ void applyMove(int i, int j, int who) {
         R.second++;
     }
     if (p1_pos.back()) {
-        printf("%s\n", "SDDASDS");
+        //printf("%s\n", "SDDASDS");
         winner = who;
     }
 }
@@ -244,23 +245,24 @@ void RunGame() {
     //printf("%s %d %d\n", "Computer move: ", best_move.first, best_move.second);
     //printf("%d %d\n", R.first - L.first, R.second - L.second);
     printf("%s\n", "PRINTED");
-    printf("%d %d\n", best_move.first, best_move.second);
-    of << best_move.first << " " << best_move.second;
+    printf("1 %d %d\n", best_move.first, best_move.second);
+    of << 1 << " " << best_move.first << " " << best_move.second;
     of.close();
     game_started = 1;
-    
+    int X = 2, O = 1;
+
     while (winner == -1) {    
         ifstream in("human");
-        in >> cur.first >> cur.second;
+        int num;
+        in >> num >> cur.first >> cur.second;
         in.close();
-        ofstream o("human");
-        o << -1 << " " << -1;
-        o.close();
 
-        if (cur != mp(-1, -1)) {
+        if (num == O) {
+            O += 1;
+            printf("%s\n", "HUMAN move ");
             ofstream of("ai");
             if (!can(L.first + cur.first, L.second + cur.second)) {
-                of << -2 << " " << -2;
+                of << -2 << " " << -2 << " " << -2;
                 of.close();
                 continue;
             }
@@ -283,16 +285,24 @@ void RunGame() {
             }
             // SET
             applyMove(best_move.first, best_move.second, cur_player);
-            
+            printf("%s %d %d\n", "AI: ", best_move.first, best_move.second);
+                
+                printf("%d\n", X);
+                forn(y, L.first, R.first) {
+                    forn(x, L.second, R.second) {
+                        printf("%c", chr[a[y][x] + 1]);
+                    }
+                    puts("");
+                }
             cur_player ^= 1;
             
             //printf("%s %d %d\n", "Computer move: ", best_move.first, best_move.second);
             //printf("%d %d\n", R.first - L.first, R.second - L.second);
             
-            printf("%s %d %d\n", "AI: ", best_move.first, best_move.second);
-            of << best_move.first << " " << best_move.second;
+            
+            of << X << " " << best_move.first << " " << best_move.second;
             of.close();
-
+            X++;
         }
 
         usleep(1000);
@@ -308,7 +318,7 @@ void RunGame() {
     }
     usleep(1000000);
     ofstream off("ai");
-    off << -2 << " " << winner;
+    off << -2 << " " << -2 << " " << winner;
     off.close();
 }
 

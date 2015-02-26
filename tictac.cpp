@@ -31,7 +31,43 @@ pii best_move = mp(-1, -1);
 pii L, R;
 int cur_player = 1, winner = -1, game_started = 0;
 vector<int> p1_pos(7, 0), p2_pos(7, 0);
+struct position {
+    pii move, L, R;
+    position(){}
+    position(pii move, pii L, pii R): move(move), L(L), R(R) {}
+};
+
+vector<position> Moves;
 // <-- end global vars -->
+
+void applyMove(int i, int j, int who, int check = 0) {
+    a[L.first + i][L.second + j] = who;
+    Moves.push_back(position(mp(L.first+i,L.second+j), L, R));
+    if (check) {
+        count_features(p1_pos, who);
+        if (p1_pos.back()) {
+            winner = who;
+        }
+    }
+    int h = R.first - L.first, w = R.second - L.second;
+    if (i == 0) {
+        L.first--;
+    }
+    if (i == h) {
+        R.first++;
+    }
+    if (j == 0) {
+        L.second--;
+    }
+    if (j == w) {
+        R.second++;
+    }
+}
+
+void deapplyMove() {
+    position pos = Moves.back(); Moves.pop_back();
+    a[pos.move.first][pos.move.second] = -1, L = pos.L, R = pos.R;
+}
 
 int cost(const vector<int> & pos, const vector<int> & op_pos, int who) {
     int one_move_win_fi = 0, one_move_win_se = 0;
@@ -114,8 +150,6 @@ void count_features(vector<int> & pos, int who) {
     }
 }
 
-int last_cost = 0;
-// players position
 
 int minimax(int depth, int who, int alpha, int beta) {
     //int ret = 0;
@@ -150,22 +184,7 @@ int minimax(int depth, int who, int alpha, int beta) {
                     //cerr << "c";
                 }
                 //printf("%d %d\n", i, j);
-                a[i][j] = who;
-                pii tmp1 = L, tmp2 = R;
-                if (i == L.first) {
-                    L.first--;
-                }
-                if (i == R.first) {
-                    R.first++;
-                }
-                if (j == L.second) {
-                    L.second--;
-                }
-                if (j == R.second) {
-                    R.second++;
-                }
-                a[i][j] = who;
-                
+                applyMove(i, j, who);
                 // count new_score
                 int new_score = minimax(depth - 1, !who, alpha, beta);
                 last_cost = new_score;
@@ -202,28 +221,6 @@ int minimax(int depth, int who, int alpha, int beta) {
     
 }
 
-void applyMove(int i, int j, int who) {
-    a[L.first + i][L.second + j] = who;
-    count_features(p1_pos, who);
-    int h = R.first - L.first, w = R.second - L.second;
-    if (i == 0) {
-        L.first--;
-    }
-    if (i == h) {
-        R.first++;
-    }
-    if (j == 0) {
-        L.second--;
-    }
-    if (j == w) {
-        R.second++;
-    }
-    if (p1_pos.back()) {
-        //printf("%s\n", "SDDASDS");
-        winner = who;
-    }
-}
-
 void RunGame() {
     // initiliaze vars
     forn(i, 0, N - 1) forn(j, 0, N - 1) a[i][j] = -1;
@@ -257,6 +254,10 @@ void RunGame() {
         in >> num >> cur.first >> cur.second;
         in.close();
 
+        if (cur.first ) {
+
+        }
+
         if (num == O) {
             O += 1;
             printf("%s\n", "HUMAN move ");
@@ -269,7 +270,7 @@ void RunGame() {
 
             //printf("--> OK!\n");
             was = cur;
-            applyMove(cur.first, cur.second, cur_player);
+            applyMove(cur.first, cur.second, cur_player, 1);
             cur_player ^= 1;
 
             minimax(DEPTH, cur_player, -200, 200);
@@ -284,7 +285,7 @@ void RunGame() {
                 assert(0);
             }
             // SET
-            applyMove(best_move.first, best_move.second, cur_player);
+            applyMove(best_move.first, best_move.second, cur_player, 1);
             printf("%s %d %d\n", "AI: ", best_move.first, best_move.second);
                 
                 printf("%d\n", X);
@@ -326,7 +327,6 @@ int main() {
     //int n;
     //cin >> n;
     
-    
     RunGame();
     
     /*
@@ -335,20 +335,5 @@ int main() {
      cin>>a[i][j];
      */
     
-    
-    //L = mp(MID, MID), R = mp(n + MID + 1, n + MID + 1);
-    /*
-     int a1=0, a2=0,a3=0,a4=0;
-     int b1=0, b2=0, b3=0, b4=0;
-     count_features(a1, a2, a3, a4, 0);
-     count_features(b1, b2, b3, b4, 1);
-     */
-    //cur_player = 1;
-    //  a[3][0] = 1;
-    //count_features(b1, b2, b3, b4, 0);
-    //cout << b1 << " " << b2 << " " << b3 << " " << b4 << endl;
-    //cout << cost(a1,a2,a3,a4,b1,b2,b3,b4,1) << " ";
-    //minimax(3, cur_player);
-    //cout << best_move.first - MID << " " << best_move.second - MID << "\n";
     return 0;
 }

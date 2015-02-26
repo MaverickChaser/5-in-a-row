@@ -45,7 +45,7 @@ class Button(QPushButton):
         if self.text() != "":
             print "SHIT"
             return
-        global player, L, R, last_move, O
+        global player, L, R, O
         if pl == "O" and player == "X":
             msgBox = QMessageBox()
             msgBox.setText("AI's turn, bitch!")
@@ -55,8 +55,7 @@ class Button(QPushButton):
         self.setText(player)
         if player == "O":
             player = "X"
-            
-            last_move = self.i, self.j
+            moves.append((self.i, self.j, L, R))
             i, j = self.i-L[0], self.j-L[1]
             apply_move(i, j)
             write_file(i, j)
@@ -75,6 +74,7 @@ L, R = [N//2, N//2], [N//2, N//2]
 btns = [[0] * N for i in range(N)]
 X = 1
 O = 1
+moves = []
 
 def write_file(i, j):
     human = open("human", "w")
@@ -97,8 +97,8 @@ def apply_move(i, j):
         R[1]+=1;
 
 def show_last_move():
-    print last_move
-    btns[last_move[0]][last_move[1]].setStyleSheet("background-color: #2f4f4f; color:green")
+    print 
+    btns[moves[-1][0]][moves[-1][1]].setStyleSheet("background-color: #2f4f4f; color:green")
     #QApplication.processEvents()
     #for i in range(10000): pass
     #btns[last_move[0]][last_move[1]].setStyleSheet("background-color: #2f4f4f; color:red")
@@ -120,7 +120,8 @@ def run():
             g.addWidget(b, i, j, 1, 1)
     button = QPushButton("Last move")
     button.clicked.connect(show_last_move)
-    g.addWidget(button, N, 0, 1, N, Qt.AlignCenter)
+    g.addWidget(button, N, 0, 1, N, Qt.AlignLeft)
+    g.addWidget(QPushButton("Back"), N, 0, 1, N, Qt.AlignRight)
     window.show()
     
     
@@ -142,7 +143,7 @@ def run():
         s = ai.readline()
         if s == "":
             continue
-            
+
         num, i, j = list(map(int, s.split()))
 
         if i == -2:
@@ -154,7 +155,7 @@ def run():
                 print ''
         elif num == X:
             X += 1
-            last_move = L[0] + i, L[1] + j
+            moves.append((L[0] + i, L[1] + j, L, R))
             btns[L[0] + i][L[1] + j].onclick("X")
             apply_move(i, j)
 

@@ -19,7 +19,7 @@ using namespace std;
 
 const int N = 40;
 const int MID = N / 2; //N / 2;
-const int DEPTH = 2;
+const int DEPTH = 6;
 const int DELTA = 10;
 
 const char chr[] = { '.', 'O', 'X' };
@@ -39,27 +39,28 @@ struct position {
 
 vector<position> Moves;
 // <-- end global vars -->
+void count_features(vector<int> & pos, int who);
 
 void applyMove(int i, int j, int who, int check = 0) {
-    a[L.first + i][L.second + j] = who;
-    Moves.push_back(position(mp(L.first+i,L.second+j), L, R));
+    a[i][j] = who;
+    Moves.push_back(position(mp(i, j), L, R));
     if (check) {
         count_features(p1_pos, who);
         if (p1_pos.back()) {
             winner = who;
         }
     }
-    int h = R.first - L.first, w = R.second - L.second;
-    if (i == 0) {
+    // /int h = R.first - L.first, w = R.second - L.second;
+    if (i == L.first) {
         L.first--;
     }
-    if (i == h) {
+    if (i == R.first) {
         R.first++;
     }
-    if (j == 0) {
+    if (j == L.second) {
         L.second--;
     }
-    if (j == w) {
+    if (j == R.second) {
         R.second++;
     }
 }
@@ -91,7 +92,6 @@ int cost(const vector<int> & pos, const vector<int> & op_pos, int who) {
     }
     return ans;
 }
-
 
 bool can(int i, int j) {
     if (a[i][j] != -1) return 0;
@@ -169,52 +169,41 @@ int minimax(int depth, int who, int alpha, int beta) {
     if (depth == 0)
         return cur_cost;
     
-    // prunning
-    
-    //    if (abs(cur_cost) < abs(last_cost)) {
-    //        return last_cost = cur_cost;
-    //    }
-    
-    pii move = mp(-1, -1);
-    
+    vector<pair<int, pii> > all_moves;
+
     forn(i, L.first, R.first) {
         forn(j, L.second, R.second) {
             if (can(i, j) || !game_started) {
-                if (a[L.first+3][L.second+2] == 0 && a[i + 1][j - 1] == 1 && a[i + 2][j - 2] == 1 && a[i+3][j-3]==1 && a[i+4][j-4]==1 && who == 1) {
-                    //cerr << "c";
-                }
-                //printf("%d %d\n", i, j);
                 applyMove(i, j, who);
                 // count new_score
-                int new_score = minimax(depth - 1, !who, alpha, beta);
-                last_cost = new_score;
-                
-                // update move
-                if (who == cur_player) {
-                    if (new_score > alpha) {
-                        alpha = new_score;
-                        move = mp(i - tmp1.first, j - tmp1.second);
-                    }
-                }
-                else {
-                    if (new_score < beta) {
-                        beta = new_score;
-                        move = mp(i - tmp1.first, j - tmp1.second);
-                    }
-                }
-                
+                int new_score = minimax(0, !who, alpha, beta);
+                all_moves.push_back(mp(new_score, mp(i, j)));
                 // restore values
-                L = tmp1, R = tmp2;
-                a[i][j] = -1;
-                
-                if (alpha >= beta || alpha > 90) {
-                    //printf("%s\n", "SUCCESS");
-                    break;
-                }
+                deapplyMove();
             }
         }
     }
     
+    sort(all_moves.begin(), all_moves.end(), greater<pair<int, pii> >());
+    pii move = mp(-1, -1);
+    for (int i=0; i<3 && i<all_moves.size(); i++) {
+        pii current_move = all_moves[i].second;
+        applyMove(current_move.first, current_move.second, who);
+        int new_score = minimax(depth - 1, !who, alpha, beta);
+        if (who == cur_player) {
+            if (new_score > alpha) {
+                alpha = new_score;
+                move = current_move;
+            }
+        }
+        else {
+            if (new_score < beta) {
+                beta = new_score;
+                move = current_move;
+            }
+        }
+        deapplyMove();
+    }
     // update global best_move
     best_move = move;
     return (who == cur_player ? alpha : beta);
@@ -239,9 +228,6 @@ void RunGame() {
     
     cur_player ^= 1;
     
-    //printf("%s %d %d\n", "Computer move: ", best_move.first, best_move.second);
-    //printf("%d %d\n", R.first - L.first, R.second - L.second);
-    printf("%s\n", "PRINTED");
     printf("1 %d %d\n", best_move.first, best_move.second);
     of << 1 << " " << best_move.first << " " << best_move.second;
     of.close();
@@ -254,15 +240,12 @@ void RunGame() {
         in >> num >> cur.first >> cur.second;
         in.close();
 
-        if (cur.first ) {
-
-        }
 
         if (num == O) {
             O += 1;
             printf("%s\n", "HUMAN move ");
             ofstream of("ai");
-            if (!can(L.first + cur.first, L.second + cur.second)) {
+            if (!can(cur.first, cur.second)) {
                 of << -2 << " " << -2 << " " << -2;
                 of.close();
                 continue;
@@ -286,19 +269,21 @@ void RunGame() {
             }
             // SET
             applyMove(best_move.first, best_move.second, cur_player, 1);
+
+            // DEBUG OUTPUT
             printf("%s %d %d\n", "AI: ", best_move.first, best_move.second);
                 
-                printf("%d\n", X);
-                forn(y, L.first, R.first) {
-                    forn(x, L.second, R.second) {
-                        printf("%c", chr[a[y][x] + 1]);
-                    }
-                    puts("");
+            printf("%d\n", X);
+            forn(y, L.first, R.first) {
+                forn(x, L.second, R.second) {
+                    printf("%c", chr[a[y][x] + 1]);
                 }
-            cur_player ^= 1;
+                puts("");
+            }
+
+            //
             
-            //printf("%s %d %d\n", "Computer move: ", best_move.first, best_move.second);
-            //printf("%d %d\n", R.first - L.first, R.second - L.second);
+            cur_player ^= 1;
             
             
             of << X << " " << best_move.first << " " << best_move.second;

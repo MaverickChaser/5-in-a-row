@@ -53,12 +53,11 @@ class Button(QPushButton):
             return
         self.setStyleSheet("background-color: #2f4f4f; color:red")
         self.setText(player)
+        apply_move(self.i, self.j)
+
         if player == "O":
             player = "X"
-            moves.append((self.i, self.j, L, R))
-            i, j = self.i-L[0], self.j-L[1]
-            apply_move(i, j)
-            write_file(i, j)
+            write_file(self.i, self.j)
             O += 1
         else:
             player = "O"
@@ -67,7 +66,6 @@ class Button(QPushButton):
      #   return QSize(20, 20)
 
 player = "X"
-ai_turn = 1
 last_move = (-2, -2)
 N = 40
 L, R = [N//2, N//2], [N//2, N//2]
@@ -83,21 +81,18 @@ def write_file(i, j):
 
 def apply_move(i, j):
     global L, R
-    h, w = R[0] - L[0], R[1] - L[1]
-    if (i == 0):
-        L[0]-=1;
-    
-    if (i == h):
-        R[0]+=1;
-    
-    if (j == 0):
+    moves.append((i, j, L, R))
+    if i == L[0]:
+        L[0]-=1
+    if i == R[0]:
+        R[0]+=1
+    if j == L[1]:
         L[1]-=1;
-    
-    if (j == w):
+    if j == R[1]:
         R[1]+=1;
 
 def show_last_move():
-    print 
+    #print 
     btns[moves[-1][0]][moves[-1][1]].setStyleSheet("background-color: #2f4f4f; color:green")
     #QApplication.processEvents()
     #for i in range(10000): pass
@@ -115,7 +110,6 @@ def run():
         for j in range(N):
             b = Button(i, j)
             b.setFixedSize(20, 20)
-
             btns[i][j] = b
             g.addWidget(b, i, j, 1, 1)
     button = QPushButton("Last move")
@@ -126,7 +120,6 @@ def run():
     
     
     os.system("echo -2 -2 -2 > ai && echo -1 -1 -1 > human")
-    
     
     msgBox = QMessageBox();
     winner = -1
@@ -152,15 +145,12 @@ def run():
                 msgBox.exec_(); 
             else:
                 winner = j
-                print ''
         elif num == X:
             X += 1
-            moves.append((L[0] + i, L[1] + j, L, R))
-            btns[L[0] + i][L[1] + j].onclick("X")
-            apply_move(i, j)
+            btns[i][j].onclick("X")
+            
 
         ai.close()
-        #human.close() 
         #time.sleep(0.1)
     
 

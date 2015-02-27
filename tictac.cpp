@@ -19,7 +19,7 @@ using namespace std;
 
 const int N = 40;
 const int MID = N / 2; //N / 2;
-const int DEPTH = 6;
+const int DEPTH = 3;
 const int DELTA = 10;
 
 const char chr[] = { '.', 'O', 'X' };
@@ -40,6 +40,7 @@ struct position {
 vector<position> Moves;
 // <-- end global vars -->
 void count_features(vector<int> & pos, int who);
+int minimax(int depth, int who, int, int);
 
 void applyMove(int i, int j, int who, int check = 0) {
     a[i][j] = who;
@@ -50,7 +51,6 @@ void applyMove(int i, int j, int who, int check = 0) {
             winner = who;
         }
     }
-    // /int h = R.first - L.first, w = R.second - L.second;
     if (i == L.first) {
         L.first--;
     }
@@ -150,6 +150,34 @@ void count_features(vector<int> & pos, int who) {
     }
 }
 
+void find_best(int depth, int who) {
+    vector<pair<int, pii> > all_moves;
+    forn(i, L.first, R.first) {
+        forn(j, L.second, R.second) {
+            if (can(i, j) || !game_started) {
+                applyMove(i, j, who);
+                // count new_score
+                int new_score = minimax(3, !who, -200, 200);
+                all_moves.push_back(mp(new_score, mp(i, j)));
+                // restore values
+                deapplyMove();
+            }
+        }
+    }
+    sort(all_moves.begin(), all_moves.end(), greater<pair<int, pii> >());
+    int cur_best = -300;
+    for (int i=0; i<3 && i<all_moves.size(); i++) {
+        pii current_move = all_moves[i].second;
+        applyMove(current_move.first, current_move.second, who);
+        int new_score = minimax(depth - 1, !who, -200, 200);
+        if (new_score > cur_best) {
+            cur_best = new_score;
+            best_move = current_move;
+        }
+        deapplyMove();
+    }
+    
+}
 
 int minimax(int depth, int who, int alpha, int beta) {
     //int ret = 0;
@@ -169,45 +197,30 @@ int minimax(int depth, int who, int alpha, int beta) {
     if (depth == 0)
         return cur_cost;
     
-    vector<pair<int, pii> > all_moves;
-
     forn(i, L.first, R.first) {
         forn(j, L.second, R.second) {
             if (can(i, j) || !game_started) {
                 applyMove(i, j, who);
                 // count new_score
-                int new_score = minimax(0, !who, alpha, beta);
-                all_moves.push_back(mp(new_score, mp(i, j)));
+                int new_score = minimax(depth - 1, !who, alpha, beta);
+                
+                if (who == cur_player) {
+                    if (new_score > alpha) {
+                        alpha = new_score;
+                    }
+                }
+                else {
+                    if (new_score < beta) {
+                        beta = new_score;
+                    }
+                }
                 // restore values
                 deapplyMove();
             }
         }
     }
     
-    sort(all_moves.begin(), all_moves.end(), greater<pair<int, pii> >());
-    pii move = mp(-1, -1);
-    for (int i=0; i<3 && i<all_moves.size(); i++) {
-        pii current_move = all_moves[i].second;
-        applyMove(current_move.first, current_move.second, who);
-        int new_score = minimax(depth - 1, !who, alpha, beta);
-        if (who == cur_player) {
-            if (new_score > alpha) {
-                alpha = new_score;
-                move = current_move;
-            }
-        }
-        else {
-            if (new_score < beta) {
-                beta = new_score;
-                move = current_move;
-            }
-        }
-        deapplyMove();
-    }
-    // update global best_move
-    best_move = move;
     return (who == cur_player ? alpha : beta);
-    
 }
 
 void RunGame() {
@@ -218,7 +231,7 @@ void RunGame() {
     // 
 
     ofstream of("ai");
-    minimax(DEPTH, cur_player, -200, 200);
+    find_best(DEPTH, cur_player);
     
     if (best_move == mp(-1, -1)) {
         assert(0);
@@ -256,7 +269,7 @@ void RunGame() {
             applyMove(cur.first, cur.second, cur_player, 1);
             cur_player ^= 1;
 
-            minimax(DEPTH, cur_player, -200, 200);
+            find_best(DEPTH, cur_player);
             
             if (best_move == mp(-1, -1)) {
                 forn(y, L.first, R.first) {
@@ -282,7 +295,7 @@ void RunGame() {
             }
 
             //
-            
+
             cur_player ^= 1;
             
             

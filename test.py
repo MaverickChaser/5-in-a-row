@@ -64,6 +64,35 @@ class Button(QPushButton):
 
     #def sizeHint(self):
      #   return QSize(20, 20)
+'''
+class AIThread(QThread):
+
+    def run(self):
+        while winner == -1:
+            QApplication.processEvents()
+            time.sleep(0.001)
+            ai = open("ai", "r")
+
+            s = ai.readline()
+            if s == "":
+                continue
+
+            num, i, j = list(map(int, s.split()))
+
+            if i == -2:
+                if j == -2:
+                    msgBox.setText("Incorrect move, bitch!");
+                    msgBox.exec_(); 
+                else:
+                    winner = j
+            elif num == X:
+                X += 1
+                btns[i][j].onclick("X")
+                
+
+            ai.close()
+        #time.sleep(0.1)
+'''
 
 player = "X"
 last_move = (-2, -2)
@@ -98,9 +127,40 @@ def show_last_move():
     #for i in range(10000): pass
     #btns[last_move[0]][last_move[1]].setStyleSheet("background-color: #2f4f4f; color:red")
 
+
+'''
+class AThread(QThread):
+    def __init__(self):
+        super(AThread, self).__init__()
+        self.winner = -1
+    def run(self):
+        while self.winner == -1:
+            QApplication.processEvents()
+            time.sleep(0.01)
+            ai = open("ai", "r")
+
+            s = ai.readline()
+            if s == "":
+                continue
+
+            num, i, j = list(map(int, s.split()))
+
+            if i == -2:
+                if j == -2:
+                    #msgBox.setText("Incorrect move, bitch!");
+                    #msgBox.exec_(); 
+                    pass
+                else:
+                    self.winner = j
+            elif num == X:
+                X += 1
+                btns[i][j].onclick("X")
+'''
 def run():
     global last_move, X
     app = QApplication(sys.argv)
+    
+    
     window = QWidget()
     #window.SetSizeConstraint(QtGui.QLayout.SetFixedSize)  # no resize arrows
     g = QGridLayout(window)
@@ -119,15 +179,23 @@ def run():
     window.show()
     
     
-    os.system("echo -2 -2 -2 > ai && echo -1 -1 -1 > human")
-    
+    #os.system("echo -2 -2 -2 > ai && echo -1 -1 -1 > human")
+    os.system("echo -1 -1 -1 > human");
     msgBox = QMessageBox();
-    winner = -1
+    
     
     proc = subprocess.Popen(["./tictac"])
     atexit.register(proc.kill)
     atexit.register(sys.exit)
     
+
+    '''
+    thread = AThread()
+    thread.finished.connect(app.exit)
+    thread.start()
+    '''
+
+    winner = -1    
     while winner == -1:
         QApplication.processEvents()
         time.sleep(0.001)
